@@ -235,6 +235,7 @@ public class MainActivity extends AppCompatActivity {
      */
     private void getSearchResult(String query){
         searchImages.clear();
+        customRecyclerViewAdapter.notifyDataSetChanged();
         progressBar.setVisibility(View.VISIBLE);
         Request request = new Request.Builder()
                 .url("https://api.imgur.com/3/gallery/search/?q="+query)
