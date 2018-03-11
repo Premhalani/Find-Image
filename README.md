@@ -11,6 +11,15 @@ Features:
 5. Pan and zoom on any image with next and previous image button (PhotoDraweeView)
 6. Get title and url of the images while viewing
 
+<p align="center">
+  <img src="images/sc_1.png" width="350"/>
+  <img src="images/sc_2.png" width="350"/>
+  <img src="images/sc_3.png" width="350"/>
+  <img src="images/sc_4.png" width="350"/>
+  <img src="images/sc_5.png" width="350"/>
+  
+</p>
+
 Libraries used:
 1. FloatingSearchView: https://github.com/arimorty/floatingsearchview
 2. OkHttp3: https://github.com/square/okhttp
