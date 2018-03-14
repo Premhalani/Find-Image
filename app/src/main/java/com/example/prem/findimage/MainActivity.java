@@ -106,6 +106,7 @@ public class MainActivity extends AppCompatActivity {
         progressBar = findViewById(R.id.progress_bar);
         newSearchLayout = findViewById(R.id.new_search);
         infiniteScrollListener = new EndlessRecyclerViewScrollListener(reLayoutManager) {
+            //Endless Scrolling effect
             @Override
             public void onLoadMore(int page, int totalItemsCount, RecyclerView view) {
                 lastPageCount = page;
@@ -136,6 +137,8 @@ public class MainActivity extends AppCompatActivity {
         searchView.setOnQueryChangeListener(new FloatingSearchView.OnQueryChangeListener() {
             @Override
             public void onSearchTextChanged(final String oldQuery, final String newQuery) {
+                //Added this to see if the user stops typing
+                //Only fires the query 1 second after the user stops typing.
                 if(timer != null)
                     timer.cancel();
                 timer = new CountDownTimer(1000,1000) {
@@ -143,7 +146,6 @@ public class MainActivity extends AppCompatActivity {
                     public void onTick(long l) {
 
                     }
-
                     @Override
                     public void onFinish() {
                         if(!newQuery.equals("") &&  oldQuery!=""){
@@ -163,7 +165,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         /**
-         * Used to show historu
+         * Used to show history
          */ 
         searchView.setOnSearchListener(new FloatingSearchView.OnSearchListener() {
             @Override
