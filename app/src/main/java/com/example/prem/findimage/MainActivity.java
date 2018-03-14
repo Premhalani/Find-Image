@@ -3,6 +3,8 @@ package com.example.prem.findimage;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.AsyncTask;
+import android.os.CountDownTimer;
+import android.os.Handler;
 import android.support.v4.content.res.ResourcesCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -27,8 +29,10 @@ import com.example.prem.findimage.dataobjects.Image;
 import com.example.prem.findimage.dataobjects.SearchObject;
 import com.example.prem.findimage.room.AppDatabase;
 import com.example.prem.findimage.util.DataHelper;
+import com.example.prem.findimage.util.EndlessRecyclerViewScrollListener;
 import com.example.prem.findimage.util.RecyclerViewClickListener;
 import com.facebook.drawee.backends.pipeline.Fresco;
+import com.github.pwittchen.infinitescroll.library.InfiniteScrollListener;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -37,6 +41,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -53,13 +58,18 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<Image> searchImages = new ArrayList<>();
     private OkHttpClient httpClient;
     private RecyclerView recyclerView;
-    private RecyclerView.LayoutManager reLayoutManager;
+    private LinearLayoutManager reLayoutManager;
     private CustomRecyclerViewAdapter customRecyclerViewAdapter;
     private RecyclerViewClickListener listener;
     private LinearLayout newSearchLayout;
     private String lastQuery="";
     private ProgressBar progressBar;
+    private EndlessRecyclerViewScrollListener infiniteScrollListener;
+    private LinearLayoutManager layoutManager;
     private AppDatabase db;
+    private CountDownTimer timer;
+    private final long DELAY = 1000;
+    private int lastPageCount = 0;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -95,6 +105,24 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setAdapter(customRecyclerViewAdapter);
         progressBar = findViewById(R.id.progress_bar);
         newSearchLayout = findViewById(R.id.new_search);
+        infiniteScrollListener = new EndlessRecyclerViewScrollListener(reLayoutManager) {
+            @Override
+            public void onLoadMore(int page, int totalItemsCount, RecyclerView view) {
+                lastPageCount = page;
+                getSearchResult(lastQuery);
+            }
+        };
+        recyclerView.addOnScrollListener(infiniteScrollListener);
+    }
+
+    /**
+     * Clears the list and resets the page count to 1
+     */
+    private void clear(){
+        searchImages.clear();
+        customRecyclerViewAdapter.notifyDataSetChanged();
+        lastPageCount = 0;
+        infiniteScrollListener.resetState();
     }
 
     /**
@@ -107,27 +135,42 @@ public class MainActivity extends AppCompatActivity {
          */
         searchView.setOnQueryChangeListener(new FloatingSearchView.OnQueryChangeListener() {
             @Override
-            public void onSearchTextChanged(String oldQuery, String newQuery) {
-                if(!newQuery.equals("") &&  oldQuery!=""){
-                    searchView.clearSuggestions();
-                    cancel(httpClient,oldQuery);
-                    getSearchResult(newQuery);
-                    lastQuery = newQuery;
-                }else{
-                    searchView.swapSuggestions(searchHistory);
-                    lastQuery="";
-                }
+            public void onSearchTextChanged(final String oldQuery, final String newQuery) {
+                if(timer != null)
+                    timer.cancel();
+                timer = new CountDownTimer(1000,1000) {
+                    @Override
+                    public void onTick(long l) {
+
+                    }
+
+                    @Override
+                    public void onFinish() {
+                        if(!newQuery.equals("") &&  oldQuery!=""){
+                            searchView.clearSuggestions();
+                            cancelQuery(httpClient,oldQuery);
+                            clear();
+                            getSearchResult(newQuery);
+                            lastQuery = newQuery;
+                        }else{
+                            searchView.swapSuggestions(searchHistory);
+                            lastQuery="";
+                        }
+                    }
+                }.start();
+
 
             }
         });
         /**
          * Used to show historu
-         */
+         */ 
         searchView.setOnSearchListener(new FloatingSearchView.OnSearchListener() {
             @Override
             public void onSuggestionClicked(SearchSuggestion searchSuggestion) {
                 searchView.setSearchText(searchSuggestion.getBody());
                 lastQuery = searchSuggestion.getBody();
+                clear();
                 getSearchResult(lastQuery);
             }
 
@@ -234,11 +277,9 @@ public class MainActivity extends AppCompatActivity {
      * @param query
      */
     private void getSearchResult(String query){
-        searchImages.clear();
-        customRecyclerViewAdapter.notifyDataSetChanged();
         progressBar.setVisibility(View.VISIBLE);
         Request request = new Request.Builder()
-                .url("https://api.imgur.com/3/gallery/search/?q="+query)
+                .url("https://api.imgur.com/3/gallery/search/"+lastPageCount+"?q="+query)
                 .header("Authorization","Client-ID c4a8c12f3703c93")
                 .header("User-Agent","ImageSearch")
                 .tag(query)
@@ -295,11 +336,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * Cancel a request if the user is typing fast to improve network effeciency
+     * cancelQuery a request if the user is typing fast to improve network effeciency
      * @param client
      * @param tag
      */
-    public void cancel(OkHttpClient client, Object tag) {
+    public void cancelQuery(OkHttpClient client, Object tag) {
         for (Call call : client.dispatcher().queuedCalls()) {
             if (tag.equals(call.request().tag())) call.cancel();
         }

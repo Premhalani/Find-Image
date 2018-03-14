@@ -30,6 +30,7 @@ dependencies {
     implementation 'com.facebook.fresco:fresco:1.8.1'
     implementation 'com.facebook.fresco:animated-gif:1.8.1'
     compile 'org.jetbrains:annotations-java5:15.0'
+    compile 'com.github.pwittchen:infinitescroll:0.0.1'
     implementation "android.arch.persistence.room:runtime:1.0.0"
     annotationProcessor "android.arch.persistence.room:compiler:1.0.0"
     compile 'me.relex:photodraweeview:1.1.3'
