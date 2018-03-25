@@ -65,16 +65,13 @@ public class MainActivity extends AppCompatActivity {
     private String lastQuery="";
     private ProgressBar progressBar;
     private EndlessRecyclerViewScrollListener infiniteScrollListener;
-    private LinearLayoutManager layoutManager;
     private AppDatabase db;
     private CountDownTimer timer;
-    private final long DELAY = 1000;
     private int lastPageCount = 0;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        ImageViewActivity fragment = new ImageViewActivity();
         db = AppDatabase.getAppDatabase(this);
         listener = new RecyclerViewClickListener() {
             @Override
