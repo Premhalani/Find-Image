@@ -5,10 +5,12 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.example.prem.findimage.dataobjects.Image;
 import com.example.prem.findimage.R;
+import com.example.prem.findimage.imageloader.ImageLoader;
 import com.example.prem.findimage.util.RecyclerViewClickListener;
 import com.facebook.drawee.drawable.ProgressBarDrawable;
 import com.facebook.drawee.view.SimpleDraweeView;
@@ -27,19 +29,21 @@ public class CustomRecyclerViewAdapter extends RecyclerView.Adapter<CustomRecycl
     private List<Image> dataSet = new ArrayList<>();
     private Context context;
     private RecyclerViewClickListener recyclerViewClickListener;
+    private ImageLoader imageLoader;
     public CustomRecyclerViewAdapter(Context context, List<Image> myDataSet, RecyclerViewClickListener listener){
         this.dataSet = myDataSet;
         this.context = context;
+        imageLoader = new ImageLoader(context);
         this.recyclerViewClickListener = listener;
     }
     public class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
         public TextView tv_title;
-        public SimpleDraweeView simpleDraweeView;
+        public ImageView imageView;
         private RecyclerViewClickListener mListener;
         public ViewHolder(View itemView, RecyclerViewClickListener listener) {
             super(itemView);
             mListener =listener;
-            simpleDraweeView = itemView.findViewById(R.id.image_view);
+            imageView = itemView.findViewById(R.id.image_view);
             tv_title = itemView.findViewById(R.id.title);
             itemView.setOnClickListener(this);
         }
@@ -61,9 +65,7 @@ public class CustomRecyclerViewAdapter extends RecyclerView.Adapter<CustomRecycl
     @Override
     public void onBindViewHolder(CustomRecyclerViewAdapter.ViewHolder holder, int position) {
         final Image image = dataSet.get(position);
-        SimpleDraweeView simpleDraweeView = holder.simpleDraweeView;
-        simpleDraweeView.getHierarchy().setProgressBarImage(new ProgressBarDrawable());
-        simpleDraweeView.setImageURI(image.getUrl());
+        imageLoader.displayImageInView(holder.imageView,image.getUrl());
         holder.tv_title.setText(image.getTitle());
     }
 

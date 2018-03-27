@@ -14,8 +14,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.prem.findimage.dataobjects.Image;
+import com.example.prem.findimage.dataobjects.ImageFactory;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import me.relex.photodraweeview.PhotoDraweeView;
 
@@ -33,14 +35,15 @@ import me.relex.photodraweeview.PhotoDraweeView;
 public class ImageViewActivity extends AppCompatActivity {
     private PhotoDraweeView photoDraweeView;
     private TextView info_title,info_url;
-    private ArrayList<Image> images;
+    private List<Image> images;
     private FloatingActionButton nextButton,prevButton;
     private int position;
     private Image image;
     private LinearLayout layout;
     private ImageButton info_btn;
+    private ImageFactory imageFactory;
     public ImageViewActivity(){
-
+        imageFactory = ImageFactory.getImageFactory();
     }
 
     @Override
@@ -49,7 +52,8 @@ public class ImageViewActivity extends AppCompatActivity {
         setContentView(R.layout.activity_view_image);
         initViews();
         Intent intent = getIntent();
-        images = (ArrayList<Image>)intent.getSerializableExtra("image");
+        //images = (ArrayList<Image>)intent.getSerializableExtra("image");
+        images = imageFactory.getImageList();
         position = intent.getIntExtra("position",0);
         image = images.get(position);
         setImage(image);

@@ -1,10 +1,15 @@
 package com.example.prem.findimage;
 
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.CountDownTimer;
 import android.os.Handler;
+import android.support.design.widget.CoordinatorLayout;
+import android.support.design.widget.Snackbar;
 import android.support.v4.content.res.ResourcesCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -13,7 +18,9 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.Html;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -26,6 +33,7 @@ import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion;
 import com.arlib.floatingsearchview.util.Util;
 import com.example.prem.findimage.adapters.CustomRecyclerViewAdapter;
 import com.example.prem.findimage.dataobjects.Image;
+import com.example.prem.findimage.dataobjects.ImageFactory;
 import com.example.prem.findimage.dataobjects.SearchObject;
 import com.example.prem.findimage.room.AppDatabase;
 import com.example.prem.findimage.util.DataHelper;
@@ -55,7 +63,8 @@ import okhttp3.Response;
 public class MainActivity extends AppCompatActivity {
     private FloatingSearchView searchView;
     private List<SearchObject> searchHistory = new ArrayList<>();
-    private ArrayList<Image> searchImages = new ArrayList<>();
+    //private ArrayList<Image> searchImages = new ArrayList<>();
+    private ImageFactory imageFactory;
     private OkHttpClient httpClient;
     private RecyclerView recyclerView;
     private LinearLayoutManager reLayoutManager;
@@ -77,7 +86,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view, int position) {
                 Intent intent = new Intent(MainActivity.this,ImageViewActivity.class);
-                intent.putExtra("image",searchImages);
+                //intent.putExtra("image",searchImages);
                 intent.putExtra("position",position);
                 startActivity(intent);
             }
@@ -86,6 +95,7 @@ public class MainActivity extends AppCompatActivity {
         httpClient = new OkHttpClient.Builder().build();
         Fresco.initialize(this);
         getSearchHistory();
+        if(!isConnectedToInternet()) showSnackbar();
     }
 
     /**
@@ -94,11 +104,12 @@ public class MainActivity extends AppCompatActivity {
     private void initViews(){
         Toolbar toolbar = findViewById(R.id.toolbar);
         toolbar.setTitle("Find Image");
+        imageFactory = ImageFactory.getImageFactory();
         searchView = findViewById(R.id.floating_search_view);
         recyclerView = findViewById(R.id.image_list);
         reLayoutManager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(reLayoutManager);
-        customRecyclerViewAdapter = new CustomRecyclerViewAdapter(this,searchImages,listener);
+        customRecyclerViewAdapter = new CustomRecyclerViewAdapter(this,imageFactory.getImageList(),listener);
         recyclerView.setAdapter(customRecyclerViewAdapter);
         progressBar = findViewById(R.id.progress_bar);
         newSearchLayout = findViewById(R.id.new_search);
@@ -111,18 +122,43 @@ public class MainActivity extends AppCompatActivity {
             }
         };
         recyclerView.addOnScrollListener(infiniteScrollListener);
+
     }
 
     /**
      * Clears the list and resets the page count to 1
      */
     private void clear(){
-        searchImages.clear();
+        //searchImages.clear();
+        imageFactory.clear();
         customRecyclerViewAdapter.notifyDataSetChanged();
         lastPageCount = 0;
         infiniteScrollListener.resetState();
     }
 
+    public void showSnackbar(){
+        Snackbar mySnackbar = Snackbar.make(findViewById(R.id.coordinator_layout),"Internet Connection not available", Snackbar.LENGTH_SHORT);
+        View view = mySnackbar.getView();
+        TextView tv = (TextView) view.findViewById(android.support.design.R.id.snackbar_text);
+        tv.setTextColor(Color.RED);
+        view.setBackgroundColor(Color.WHITE);
+        CoordinatorLayout.LayoutParams params =(CoordinatorLayout.LayoutParams)view.getLayoutParams();
+        params.gravity = Gravity.TOP;
+        view.setLayoutParams(params);
+        mySnackbar.show();
+    }
+    /**
+     * Check for internet connection
+     */
+    public boolean isConnectedToInternet(){
+        ConnectivityManager cm =
+                (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        boolean isConnected = activeNetwork != null &&
+                activeNetwork.isConnectedOrConnecting();
+        return isConnected;
+    }
     /**
      * Set up all the the search bar and handle its events
      */
@@ -204,7 +240,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onFocusCleared() {
                 if(lastQuery.equals("")){
-                    searchImages.clear();
+                    //searchImages.clear();
+                    imageFactory.clear();
                     customRecyclerViewAdapter.notifyDataSetChanged();
                     newSearchLayout.setVisibility(View.VISIBLE);
                 }else {
@@ -276,6 +313,10 @@ public class MainActivity extends AppCompatActivity {
      * @param query
      */
     private void getSearchResult(String query){
+        if(!isConnectedToInternet()){
+            showSnackbar();
+            return;
+        }
         progressBar.setVisibility(View.VISIBLE);
         Request request = new Request.Builder()
                 .url("https://api.imgur.com/3/gallery/search/"+lastPageCount+"?q="+query)
@@ -306,7 +347,8 @@ public class MainActivity extends AppCompatActivity {
                         image.setTitle(image_object.getString("title"));
                         image.setUrl("https://i.imgur.com/"+ image.getId()+"l.jpg");    //Get Large Bitmap
                         image.setDescription(image_object.getString("description"));
-                        searchImages.add(image);
+                        //searchImages.add(image);
+                        imageFactory.addImage(image);
                     }
                 } catch (JSONException e) {
                     e.printStackTrace();
@@ -318,7 +360,8 @@ public class MainActivity extends AppCompatActivity {
                         /**
                          * Update UI on main thread
                          */
-                        if(searchImages.size() == 0){
+                        //if(searchImages.size() == 0){
+                        if(imageFactory.size() == 0){
                             Toast.makeText(getApplicationContext(),"No Images Found",Toast.LENGTH_SHORT).show();
                             newSearchLayout.setVisibility(View.VISIBLE);
                         }else{
