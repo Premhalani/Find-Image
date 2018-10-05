@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">Find Image</string>
     <string name="app_title">Find Image</string>
+    <string name="splash_text">Made by Prem</string>
 </resources>
